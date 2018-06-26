@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <!-- development version, includes helpful console warnings -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- production version, optimized for size and speed -->
+    <!--<script src="https://cdn.jsdelivr.net/npm/vue"></script>-->
+</head>
+<body>
+    <style>
+        #overlay {
+            position: fixed;
+            display: block;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0);
+            z-index: 2;
+            cursor: pointer;
+        }
+    </style>
+
+    <div id="app">
+        <img src="images/image.png" style="height: 95vh" v-bind:style="{ transform: 'rotate(' + rotation + 'deg)' }" >
+    </div>
+
+    <div id="overlay">
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/4.3.3/js/swiper.min.js"></script>
+
+    <script>
+
+        let app = new Vue({
+            el: '#app',
+            data: {
+                rotation: 0
+            },
+            methods: {
+                rotate: function(value) {
+                    this.rotation = this.rotation + value;
+                }
+            }
+        });
+
+        let mouseStart = function(x) {
+            mouseUp = false;
+            x.changedTouches = [];
+            x.changedTouches.push({ pageX: x.pageX, pageY: x.pageY });
+            mouseMove(x);
+        };
+
+        let previousTouch;
+        let mouseUp = true;
+
+        let handleEnd = function() {
+            previousTouch = null;
+            mouseUp = true;
+        };
+
+        let mouseMove = function(x) {
+            if (mouseUp)
+                return;
+
+            x.changedTouches = [];
+            x.changedTouches.push({ pageX: x.pageX, pageY: x.pageY });
+            handleMove(x);
+        };
+
+        let handleMove = function(x) {
+
+            if (x.changedTouches.length === 0)
+                return;
+
+            let changedTouch = x.changedTouches[0];
+
+            if (previousTouch) {
+                //TODO: Determine location based on centre of the image, draw an arc between the two points
+                //Convert to radians and rotate accordingly
+                //Note: Further away from the centre will be a slower rotation
+
+                let x = changedTouch.pageX - previousTouch.pageX;
+                let y = changedTouch.pageY - previousTouch.pageY;
+                let diff;
+                if (Math.abs(x) > Math.abs(y)) {
+                    diff = x;
+                } else {
+                    diff = y;
+                }
+
+                //Determine quadrant and invert if on left or bottom
+                //Assume square view
+                if (changedTouch.pageY > changedTouch.pageX) {
+
+                    if (previousTouch.pageY <= previousTouch.pageX) {
+                        //Swapped quadrant
+                        diff = 0; // Prevent
+                    } else {
+                        //Bottom-left
+                        diff = -diff;
+                    }
+                } else {
+                    //Top-right
+                }
+
+                if (mouseUp) {
+                    diff = diff / 10;
+                } else {
+                    diff = diff / 5;
+                }
+
+                app.rotate(diff);
+            }
+
+            previousTouch = changedTouch;
+        };
+
+
+        let el = document.getElementById("overlay");
+        console.log(document.getElementById('overlay'));
+        el.addEventListener("touchstart", handleMove, false);
+        el.addEventListener("touchend", handleEnd, false);
+        el.addEventListener("touchmove", handleMove, false);
+
+        el.addEventListener("mousedown", mouseStart, false);
+        el.addEventListener("mouseup", handleEnd, false);
+        el.addEventListener("mousemove", mouseMove, false);
+    </script>
+
+</body>
+</html>
