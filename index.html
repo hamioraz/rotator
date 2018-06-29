@@ -15,9 +15,9 @@
         #overlay {
             position: fixed;
             display: block;
-            width: 100%;
-            height: 100%;
-            top: 0;
+            width: 100vw;
+            height: 100vh;
+            top: 0vh;
             left: 0;
             right: 0;
             bottom: 0;
@@ -25,10 +25,20 @@
             z-index: 2;
             cursor: pointer;
         }
+
+        #image {
+            position: fixed;
+            height: 100vh;
+            top: 0vh;
+            z-index: 0;
+        }
     </style>
 
     <div id="app">
-        <img src="images/image.png" style="height: 95vh" v-bind:style="{ transform: 'rotate(' + rotation + 'deg)' }" >
+        <div style="position: fixed; z-index: 1; display: none">
+            {{ coords }}
+        </div>
+        <img id="image" src="images/image.png" style="" v-bind:style="{ transform: 'rotate(' + rotation + 'deg)' }" >
     </div>
 
     <div id="overlay">
@@ -38,11 +48,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/4.3.3/js/swiper.min.js"></script>
 
     <script>
+        let h = window.innerHeight;
+        let w = window.innerWidth;
+        let centre_x = w/2;
+        let centre_y = h/2;
+        Math.toDegrees = function(radians) {
+            return radians * 180 / Math.PI;
+        };
 
         let app = new Vue({
             el: '#app',
             data: {
-                rotation: 0
+                rotation: 0,
+                rotation2: 0,
+                coords: null
             },
             methods: {
                 rotate: function(value) {
@@ -82,40 +101,24 @@
 
             let changedTouch = x.changedTouches[0];
 
+            //console.log(x);
+
             if (previousTouch) {
-                //TODO: Determine location based on centre of the image, draw an arc between the two points
-                //Convert to radians and rotate accordingly
+                //Find the angle between each coordinate, and the center of the image
+                //Convert from radians to degrees and rotate accordingly
                 //Note: Further away from the centre will be a slower rotation
 
-                let x = changedTouch.pageX - previousTouch.pageX;
-                let y = changedTouch.pageY - previousTouch.pageY;
-                let diff;
-                if (Math.abs(x) > Math.abs(y)) {
-                    diff = x;
-                } else {
-                    diff = y;
-                }
+                //Based on radians
+                let delta_x1 = centre_x - changedTouch.pageX;
+                let delta_y1 = centre_y - changedTouch.pageY;
+                let theta_radians1 = Math.atan2(delta_y1, delta_x1);
 
-                //Determine quadrant and invert if on left or bottom
-                //Assume square view
-                if (changedTouch.pageY > changedTouch.pageX) {
+                let delta_x2 = centre_x - previousTouch.pageX;
+                let delta_y2 = centre_y - previousTouch.pageY;
+                let theta_radians2 = Math.atan2(delta_y2, delta_x2);
 
-                    if (previousTouch.pageY <= previousTouch.pageX) {
-                        //Swapped quadrant
-                        diff = 0; // Prevent
-                    } else {
-                        //Bottom-left
-                        diff = -diff;
-                    }
-                } else {
-                    //Top-right
-                }
-
-                if (mouseUp) {
-                    diff = diff / 10;
-                } else {
-                    diff = diff / 5;
-                }
+                let diff = Math.toDegrees(theta_radians1) - Math.toDegrees(theta_radians2);
+                app.coords = { pageX: changedTouch.pageX, pageY: changedTouch.pageY, centre_x, centre_y };
 
                 app.rotate(diff);
             }
